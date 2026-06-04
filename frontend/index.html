@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoloPract Shop</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .add-form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .add-form input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .add-form button { padding: 8px 20px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .products { display: grid; gap: 10px; }
+        .product { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .product .name { font-weight: bold; font-size: 18px; }
+        .product .price { color: #4CAF50; font-size: 20px; font-weight: bold; }
+        .status { text-align: center; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .status.ok { background: #dff0d8; color: #3c763d; }
+        .status.err { background: #f2dede; color: #a94442; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SoloPract Shop</h1>
+        <div id="status" class="status"></div>
+        <div class="add-form">
+            <input id="name" placeholder="Назва товару">
+            <input id="price" type="number" placeholder="Ціна">
+            <input id="desc" placeholder="Опис">
+            <button onclick="addProduct()">Додати</button>
+        </div>
+        <div id="products" class="products"></div>
+    </div>
+    <script>
+        const API = '/api/products';
+        async function loadProducts() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                document.getElementById('products').innerHTML = data.map(p =>
+                    `<div class="product"><div><span class="name">${p.name}</span><br>${p.description}</div><span class="price">${p.price} грн</span></div>`
+                ).join('');
+                document.getElementById('status').className = 'status ok';
+                document.getElementById('status').textContent = 'Backend connected | Products: ' + data.length;
+            } catch(e) {
+                document.getElementById('status').className = 'status err';
+                document.getElementById('status').textContent = 'Backend unavailable: ' + e.message;
+            }
+        }
+        async function addProduct() {
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+            const desc = document.getElementById('desc').value;
+            if (!name || !price) return alert('Заповніть назву і ціну');
+            await fetch(API, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, price: parseFloat(price), description: desc}) });
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('desc').value = '';
+            loadProducts();
+        }
+        loadProducts();
+    </script>
+</body>
+</html>
