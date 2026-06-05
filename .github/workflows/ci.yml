@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        run: |
+          TAG=$(date +%Y%m%d%H%M%S)
+          docker build -t ghcr.io/massontg/solopract-backend:$TAG ./backend
+          docker push ghcr.io/massontg/solopract-backend:$TAG
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and push frontend
+        run: |
+          docker build -t ghcr.io/massontg/solopract-frontend:$TAG ./frontend
+          docker push ghcr.io/massontg/solopract-frontend:$TAG
+
+      - name: Helm bump
+        run: |
+          git clone https://x-access-token:${{ secrets.HELM_REPO_TOKEN }}@github.com/MassonTG/solopract-helm.git
+          cd solopract-helm
+          sed -i "s|image: ghcr.io/massontg/solopract-backend:.*|image: ghcr.io/massontg/solopract-backend:$TAG|" values.yaml
+          sed -i "s|image: ghcr.io/massontg/solopract-frontend:.*|image: ghcr.io/massontg/solopract-frontend:$TAG|" values.yaml
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "bump: images to $TAG"
+          git push
