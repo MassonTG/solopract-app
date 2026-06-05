@@ -19,9 +19,9 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
+          username: massontg
+          password: ${{ secrets.HELM_REPO_TOKEN }}
+          
       - name: Build and push backend
         run: |
           TAG=$(date +%Y%m%d%H%M%S)
